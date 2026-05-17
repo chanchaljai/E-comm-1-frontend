@@ -1,16 +1,15 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import api from '../api/axios'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
-const Register = () => {
+const Login = () => {
   const [form, setForm] = useState({
-    name: "",
     email: "",
     password: "",
-    role: "user",
   });
 
   const [msg, setMsg] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -20,11 +19,25 @@ const Register = () => {
     e.preventDefault();
 
     try {
-      const res = await api.post("/auth/register", form);
-      setMsg(res.data.msg || "Registration successful");
-      setForm({ name: "", email: "", password: "", role: "user" });
+      const res = await api.post("/auth/login", form);
+
+      const { token, user } = res.data;
+
+      // store token
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      setMsg("Login successful");
+
+      // 👇 ROLE BASED REDIRECT
+      if (user.role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
+
     } catch (error) {
-      setMsg(error?.response?.data?.msg || "Registration failed");
+      setMsg(error?.response?.data?.msg || "Login failed");
     }
   };
 
@@ -34,7 +47,7 @@ const Register = () => {
       <div className="bg-white p-6 rounded shadow-md w-80">
 
         <h1 className="text-2xl font-bold text-center mb-2">
-          Register Here
+          Login
         </h1>
 
         {msg && (
@@ -44,15 +57,6 @@ const Register = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          <input
-            type="text"
-            name="name"
-            placeholder="Name"
-            value={form.name}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
 
           <input
             type="email"
@@ -72,36 +76,17 @@ const Register = () => {
             className="w-full border p-2 rounded"
           />
 
-          <select
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          >
-            <option value="user">User</option>
-            <option value="admin">Admin</option>
-          </select>
-
           <button
             type="submit"
-            className="w-full bg-gray-800 hover:bg-gray-900 text-white p-2 rounded"
+            className="w-full bg-gray-800 text-white p-2 rounded"
           >
-            Register
+            Login
           </button>
 
         </form>
-
-        {/* 👇 LOGIN LINK ADDED */}
-        <div className="text-center text-sm mt-3">
-          Already registered?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login
-          </Link>
-        </div>
-
       </div>
     </div>
   );
 };
 
-export default Register;
+export default Login;
